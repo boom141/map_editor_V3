@@ -5,9 +5,11 @@ class Spritesheet():
 		self.root_folder = root_folder
 		self.sub_folder = os.listdir(root_folder)
 		self.current_folder = None
-		self.current_component = 0
+		self.current_component = None
 		self.buttons_color = 'white'
 		self.current_button = -1
+		self.highlight_color = (25,25,25)
+		self.highlight_index = None
 
 	def Folder_Selection(self,surface):
 		buttons = []
@@ -32,7 +34,8 @@ class Spritesheet():
 			if button.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0]:
 				self.current_button = buttons.index(button)
 				self.current_folder = self.sub_folder[buttons.index(button)]
-
+				self.current_component = None
+				self.highlight_index = None
 
 	def Folder_Component(self,surface):
 		buttons = []
@@ -44,8 +47,11 @@ class Spritesheet():
 					image_copy = image.copy()
 					image_copy = pygame.transform.scale(image, (35,35))
 					image_copy.set_colorkey((0,0,0))
-					
-					button = pygame.draw.rect(surface, ((0,255,0)), (30,(i+5)*38,35,35), 1)
+					if i == self.highlight_index:
+						self.highlight_color = (0,255,0)
+					else:
+						self.highlight_color = (25,25,25)
+					button = pygame.draw.rect(surface, self.highlight_color, (30,(i+5)*38,35,35))
 					buttons.append(button)
 					surface.blit(image_copy, (30, (i+5)*38))
 		
@@ -55,7 +61,7 @@ class Spritesheet():
 		for button in buttons:
 			if button.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0]:
 				self.current_component = components[buttons.index(button)]
-				
+				self.highlight_index = buttons.index(button)
 				
 
 spritesheet = Spritesheet('images/')
