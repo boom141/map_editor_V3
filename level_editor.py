@@ -1,13 +1,14 @@
-import pygame, time, sys
+import pygame, time, sys, os
 from core_classes import*
 from spritesheet import*
+from map_loader import*
 from pygame.locals import *
 
 pygame.init()
 
 
 WINDOW_DIMENSION = (800,600)
-LAYER_DIMENSION = (100,100)
+LAYER_DIMENSION = (1000,800)
 SPEED = 5
 LAYER_COUNT = 5
 TILE_SIZE = 16
@@ -15,27 +16,27 @@ TILE_SIZE = 16
 window = pygame.display.set_mode(WINDOW_DIMENSION)
 layers = []
 for i in range(LAYER_COUNT):
-	layers.append(pygame.Surface(LAYER_DIMENSION))
+	layers.append(pygame.Surface(LAYER_DIMENSION, pygame.SRCALPHA))
 spritesheet_section = pygame.Surface((250,600))
 fps = pygame.time.Clock()
 last_time = time.time()
 scroll = [0,0]
 
 up,down,left,right = False,False,False,False
+change_layer = False
 
-current_layer = 0
+current_layer = LAYER_COUNT
+clicked_once = 0
 
-grid = Game_map().Initialized_Grid(LAYER_DIMENSION,TILE_SIZE)
+map_data = game_map.Map_Data(LAYER_DIMENSION,TILE_SIZE,LAYER_COUNT)
 
-map = {}
-for i in range(LAYER_COUNT):
-	map[f'LAYER {i+1}'] = grid.copy()
 
 while True:
 # surface fill -----------------------------------------------------------#
-	window.fill((45,45,45))
-	for layer in layers:
+	window.fill((0,0,0))
+	for index, layer in enumerate(layers):
 		layer.fill((0,0,0))
+		layer.set_colorkey((0,0,0))
 	spritesheet_section.fill((25,25,25))
 
 # framerate independence -------------------------------------------------#
@@ -62,9 +63,41 @@ while True:
 	scroll[0] +=  move[0]
 	scroll[1] +=  move[1]
 
+# load map ---------------------------------------------------------------#
+	if pygame.key.get_pressed()[K_l]:
+		map_data = map_loader.Load('save_map/map.json')
+
 # features ---------------------------------------------------------------#
 	spritesheet.Folder_Selection(spritesheet_section)
 	spritesheet.Folder_Component(spritesheet_section)
+	
+	if change_layer and clicked_once == 0:
+		current_layer -= 1
+		if current_layer <= 0:
+			current_layer = LAYER_COUNT
+		clicked_once = 1
+	
+
+	if mouse[0] > spritesheet_section.get_width() and pygame.MOUSEMOTION:
+# hovering feature under optimization --------------------------------------#
+		# if spritesheet.current_component != None: 
+		# 	image = pygame.image.load(os.path.join(f'images/{spritesheet.current_folder}',spritesheet.current_component))
+		# 	image.set_colorkey((0,0,0))
+		# 	layers[4].blit(image, (mouse[0],mouse[1]))
+#---------------------------------------------------------------------------#
+		if pygame.mouse.get_pressed()[0]:
+		# draw on to surface --------------------------------------------#
+			if map_data[f'DATA {current_layer - 1}'][gridy][gridx] == [-1]:
+				map_data[f'DATA {current_layer - 1}'][gridy][gridx] = [(current_layer - 1),spritesheet.current_folder,spritesheet.current_component,gridx*TILE_SIZE,gridy*TILE_SIZE]
+		# erase image from the surface ----------------------------------#	
+		if pygame.mouse.get_pressed()[2]:
+			if map_data[f'DATA {current_layer - 1}'][gridy][gridx] != [-1]:
+				map_data[f'DATA {current_layer - 1}'][gridy][gridx] = [-1]
+
+	game_map.Render_Map(map_data,layers)
+	
+	if pygame.key.get_pressed()[K_SPACE]:
+		game_map.Save_Map(map_data)
 
 # event handler ----------------------------------------------------------#   
 
@@ -85,6 +118,8 @@ while True:
 				left = True
 			if event.key == pygame.K_d:
 				right = True
+			if event.key == pygame.K_DOWN:
+				change_layer = True
 
 		if event.type == pygame.KEYUP:
 			if event.key == pygame.K_w:    
@@ -95,12 +130,15 @@ while True:
 				left = False
 			if event.key == pygame.K_d:
 				right = False
+			if event.key == pygame.K_DOWN:
+				change_layer = False
+				clicked_once = 0
 
 	for layer in layers:
 		window.blit(layer, (scroll[0],scroll[1]))
 		window.blit(spritesheet_section, (0,0))
 
-	Game_map().Labels(window,current_layer)
+	game_map.Labels(window,current_layer)
 	
 	pygame.display.update()
 	fps.tick(60)
