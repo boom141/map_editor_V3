@@ -51,7 +51,7 @@ class Spritesheet():
 						self.highlight_color = (0,255,0)
 					else:
 						self.highlight_color = (25,25,25)
-					button = pygame.draw.rect(surface, self.highlight_color, (30,(i+5)*38,35,35))
+					button = pygame.draw.rect(surface, self.highlight_color, (30,(i+5)*38,37,37),1)
 					buttons.append(button)
 					surface.blit(image_copy, (30, (i+5)*38))
 		

@@ -28,7 +28,20 @@ change_layer = False
 current_layer = LAYER_COUNT
 clicked_once = 0
 
-map_data = game_map.Map_Data(LAYER_DIMENSION,TILE_SIZE,LAYER_COUNT)
+
+map_data = {}
+while True:
+	print('1: NEW MAP\n2: LOAD MAP')
+	number = int(input('ENTER CHOICE: '))
+	if number == 1:
+		map_data = game_map.Map_Data(LAYER_DIMENSION,TILE_SIZE,LAYER_COUNT)
+		break
+	elif number == 2:
+		file_name = input('ENTER FILE NAME: ')
+		map_data = map_loader.Load(f'save_map/{file_name}')
+		print('[LOAD SUCCESSFULLY!]')
+		break
+
 
 
 while True:
@@ -63,10 +76,6 @@ while True:
 	scroll[0] +=  move[0]
 	scroll[1] +=  move[1]
 
-# load map ---------------------------------------------------------------#
-	if pygame.key.get_pressed()[K_l]:
-		map_data = map_loader.Load('save_map/map.json')
-
 # features ---------------------------------------------------------------#
 	spritesheet.Folder_Selection(spritesheet_section)
 	spritesheet.Folder_Component(spritesheet_section)
@@ -79,16 +88,23 @@ while True:
 	
 
 	if mouse[0] > spritesheet_section.get_width() and pygame.MOUSEMOTION:
-# hovering feature under optimization --------------------------------------#
-		# if spritesheet.current_component != None: 
-		# 	image = pygame.image.load(os.path.join(f'images/{spritesheet.current_folder}',spritesheet.current_component))
-		# 	image.set_colorkey((0,0,0))
-		# 	layers[4].blit(image, (mouse[0],mouse[1]))
-#---------------------------------------------------------------------------#
+		# hovering feature ----------------------------------------------#
+		if spritesheet.current_component != None: 
+			image = pygame.image.load(os.path.join(f'images/{spritesheet.current_folder}',spritesheet.current_component))
+			image_rect = image.get_rect()
+			image.set_colorkey((0,0,0))
+			layers[current_layer - 1].blit(image, ((mouse[0] - int(image_rect.width/2)) - scroll[0],(mouse[1] - int(image_rect.height/2)) - scroll[1]))
+
 		if pygame.mouse.get_pressed()[0]:
 		# draw on to surface --------------------------------------------#
-			if map_data[f'DATA {current_layer - 1}'][gridy][gridx] == [-1]:
-				map_data[f'DATA {current_layer - 1}'][gridy][gridx] = [(current_layer - 1),spritesheet.current_folder,spritesheet.current_component,gridx*TILE_SIZE,gridy*TILE_SIZE]
+			if map_data[f'DATA {current_layer - 1}'][gridy][gridx] != spritesheet.current_component:
+				if spritesheet.current_folder == 'decoration' or spritesheet.current_folder == 'foliage':
+					map_data[f'DATA {current_layer - 1}'][gridy][gridx] = [(current_layer - 1),spritesheet.current_folder,spritesheet.current_component,(mouse[0] - int(image_rect.width/2)) - scroll[0],(mouse[1] - int(image_rect.height/2)) - scroll[1]]
+				elif spritesheet.current_folder == 'entity':
+					map_data['ENTITY'][gridy][gridx] = [(current_layer - 1),spritesheet.current_folder,spritesheet.current_component,gridx*TILE_SIZE,gridy*TILE_SIZE]
+				else:
+					map_data[f'DATA {current_layer - 1}'][gridy][gridx] = [(current_layer - 1),spritesheet.current_folder,spritesheet.current_component,gridx*TILE_SIZE,gridy*TILE_SIZE]
+		
 		# erase image from the surface ----------------------------------#	
 		if pygame.mouse.get_pressed()[2]:
 			if map_data[f'DATA {current_layer - 1}'][gridy][gridx] != [-1]:
